@@ -69,7 +69,9 @@ jobs:
 
       # ── 8. Build DEBUG APK (always works, no signing needed) ─────────────
       - name: Build debug APK
-        run: flutter build apk --debug --no-tree-shake-icons
+        run: |
+          flutter build apk --debug --no-tree-shake-icons
+          find . -name "*.apk" 2>/dev/null
 
       # ── 9. Build RELEASE APK (unsigned — signed step below is optional) ──
       - name: Build release APK
@@ -80,20 +82,9 @@ jobs:
         run: |
           TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-
           mkdir -p output
-
-          cp build/app/outputs/flutter-apk/app-debug.apk \
-             output/xpns-debug-${TIMESTAMP}-${SHORT_SHA}.apk
-
-          cp build/app/outputs/flutter-apk/app-release.apk \
-             output/xpns-release-${TIMESTAMP}-${SHORT_SHA}.apk
-
-          echo "APK_TIMESTAMP=${TIMESTAMP}" >> $GITHUB_ENV
-          echo "APK_SHORT_SHA=${SHORT_SHA}" >> $GITHUB_ENV
-
-          echo "Output files:"
-          ls -lh output/
+          APK=$(find . -name "app-debug.apk" | head -1)
+          cp "$APK" output/xpns-debug-${TIMESTAMP}-${SHORT_SHA}.apk
 
       # ── 11. Upload APK as GitHub Actions artifact ─────────────────────────
       - name: Upload debug APK
