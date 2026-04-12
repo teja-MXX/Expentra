@@ -16,8 +16,8 @@ apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
+    namespace "com.xpns.tracker"
     compileSdkVersion 34
-
     defaultConfig {
         applicationId "com.xpns.tracker"
         minSdkVersion 26
