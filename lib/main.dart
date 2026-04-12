@@ -27,7 +27,6 @@ void main() async {
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
-    navigationBarColor: AppColors.black,
     navigationBarIconBrightness: Brightness.light,
   ));
 
@@ -155,7 +154,6 @@ class _MainShellState extends ConsumerState<MainShell> {
     AccountsScreen(),
     AnalyticsScreen(),
     BudgetsScreen(),
-    TransactionsScreen(),
     CategoriesScreen(),
   ];
 
