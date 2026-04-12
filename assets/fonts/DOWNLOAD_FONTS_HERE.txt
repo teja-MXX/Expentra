@@ -1,0 +1,13 @@
+Place these font files in this directory:
+
+1. BebasNeue-Regular.ttf
+   → Download: https://fonts.google.com/specimen/Bebas+Neue
+
+2. SpaceMono-Regular.ttf
+   → Download: https://fonts.google.com/specimen/Space+Mono
+
+3. SpaceMono-Bold.ttf
+4. SpaceMono-Italic.ttf
+5. SpaceMono-BoldItalic.ttf
+
+All fonts are free / open source under the SIL Open Font License.
