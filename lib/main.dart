@@ -9,7 +9,6 @@ import 'screens/add_transaction_screen.dart';
 import 'screens/accounts_screen.dart';
 import 'screens/analytics_screen.dart';
 import 'screens/budgets_screen.dart';
-import 'screens/transactions_screen.dart';
 import 'screens/categories_screen.dart';
 import 'screens/settings_screen.dart';
 import 'providers/providers.dart';
