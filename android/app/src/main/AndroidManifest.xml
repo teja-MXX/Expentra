@@ -11,7 +11,7 @@
     <application
         android:label="XPNS"
         android:name="${applicationName}"
-        android:icon="@android:drawable/sym_def_app_icon"
+        android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="false">
 
         <activity

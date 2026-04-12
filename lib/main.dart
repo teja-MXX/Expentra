@@ -9,9 +9,12 @@ import 'screens/add_transaction_screen.dart';
 import 'screens/accounts_screen.dart';
 import 'screens/analytics_screen.dart';
 import 'screens/budgets_screen.dart';
+import 'screens/transactions_screen.dart';
 import 'screens/categories_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'providers/providers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +27,8 @@ void main() async {
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
+    navigationBarColor: AppColors.black,
+    navigationBarIconBrightness: Brightness.light,
   ));
 
   await Hive.initFlutter();
@@ -42,7 +47,18 @@ void main() async {
   ]);
 
   await _seedDemoData();
-  runApp(const ProviderScope(child: XpnsApp()));
+
+  final prefs = await SharedPreferences.getInstance();
+  final onboarded = prefs.getBool('onboarded') ?? false;
+  final savedName = prefs.getString('user_name') ?? '';
+
+  runApp(ProviderScope(
+    overrides: [
+      if (onboarded && savedName.isNotEmpty)
+        currentUserProvider.overrideWith((ref) => AppUser(id: 'local_user', name: savedName, email: '')),
+    ],
+    child: XpnsApp(showOnboarding: !onboarded),
+  ));
 }
 
 Future<void> _seedDemoData() async {
@@ -107,14 +123,19 @@ Future<void> _seedDemoData() async {
 }
 
 class XpnsApp extends StatelessWidget {
-  const XpnsApp({super.key});
+  final bool showOnboarding;
+  const XpnsApp({super.key, this.showOnboarding = false});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'XPNS',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
-      home: const MainShell(),
+      initialRoute: showOnboarding ? '/onboarding' : '/home',
+      routes: {
+        '/onboarding': (_) => const OnboardingScreen(),
+        '/home': (_) => const MainShell(),
+      },
     );
   }
 }
@@ -134,6 +155,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     AccountsScreen(),
     AnalyticsScreen(),
     BudgetsScreen(),
+    TransactionsScreen(),
     CategoriesScreen(),
   ];
 

@@ -16,6 +16,3 @@
 
 # App models
 -keep class com.xpns.tracker.** { *; }
-
--dontwarn com.google.android.play.core.**
--keep class com.google.android.play.core.** { *; }

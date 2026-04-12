@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
 import '../theme/app_theme.dart';
 import '../widgets/shared_widgets.dart';
-import 'package:intl/intl.dart';
 
 class AccountsScreen extends ConsumerWidget {
   const AccountsScreen({super.key});
@@ -19,9 +19,9 @@ class AccountsScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const ScreenHeader(title: 'ACCOUNTS', subtitle: 'All your money, one place'),
-          const SizedBox(height: 12),
-          TapeStrip('★ TOTAL: ${formatINR(netWorth)} ★'),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          TapeStrip('★ NET WORTH: ${formatINR(netWorth)} ★'),
+          const SizedBox(height: 14),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
@@ -31,21 +31,22 @@ class AccountsScreen extends ConsumerWidget {
                   child: _AccountCard(account: a),
                 )),
                 if (accounts.isEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(32),
-                    alignment: Alignment.center,
-                    child: Text('NO ACCOUNTS YET', style: TextStyle(fontFamily: 'BebasNeue', fontSize: 24, color: AppColors.mutedText, letterSpacing: 2)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32),
+                    child: Center(child: Text('NO ACCOUNTS YET',
+                        style: const TextStyle(fontFamily: 'BebasNeue', fontSize: 24, color: AppColors.mutedText, letterSpacing: 2))),
                   ),
-                // Add account button
                 GestureDetector(
-                  onTap: () => _showAddAccountDialog(context, ref),
+                  onTap: () => _showAddDialog(context, ref),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.black, width: 2, style: BorderStyle.solid),
+                      border: Border.all(color: AppColors.black, width: 2),
                     ),
                     alignment: Alignment.center,
-                    child: Text('+ ADD ACCOUNT', style: TextStyle(fontFamily: 'BebasNeue', fontSize: 18, letterSpacing: 2)),
+                    child: const Text('+ ADD ACCOUNT',
+                        style: TextStyle(fontFamily: 'BebasNeue', fontSize: 18, letterSpacing: 2)),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -57,75 +58,142 @@ class AccountsScreen extends ConsumerWidget {
     );
   }
 
-  void _showAddAccountDialog(BuildContext context, WidgetRef ref) {
-    final nameCtrl = TextEditingController();
-    AccountType selectedType = AccountType.bank;
-    double balance = 0;
-
-    showModalBottomSheet(
+  void _showAddDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
       context: context,
+      builder: (_) => _AddAccountDialog(ref: ref),
+    );
+  }
+}
+
+class _AddAccountDialog extends StatefulWidget {
+  final WidgetRef ref;
+  const _AddAccountDialog({required this.ref});
+  @override
+  State<_AddAccountDialog> createState() => _AddAccountDialogState();
+}
+
+class _AddAccountDialogState extends State<_AddAccountDialog> {
+  final _nameCtrl = TextEditingController();
+  final _balCtrl = TextEditingController(text: '0');
+  final _limitCtrl = TextEditingController();
+  AccountType _type = AccountType.bank;
+
+  @override
+  void dispose() { _nameCtrl.dispose(); _balCtrl.dispose(); _limitCtrl.dispose(); super.dispose(); }
+
+  void _save() {
+    if (_nameCtrl.text.trim().isEmpty) return;
+    final user = widget.ref.read(currentUserProvider)!;
+    final acct = Account(
+      userId: user.id,
+      name: _nameCtrl.text.trim(),
+      type: _type,
+      balance: double.tryParse(_balCtrl.text) ?? 0,
+      creditLimit: _type == AccountType.creditCard ? (double.tryParse(_limitCtrl.text) ?? 0) : null,
+    );
+    widget.ref.read(accountBoxProvider).add(acct);
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final typeLabels = {AccountType.cash: 'CASH', AccountType.bank: 'BANK', AccountType.creditCard: 'CREDIT CARD', AccountType.upi: 'UPI'};
+    return Dialog(
       backgroundColor: AppColors.paper,
-      isScrollControlled: true,
-      builder: (_) => StatefulBuilder(
-        builder: (ctx, setState) => Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, top: 20, left: 20, right: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('ADD ACCOUNT', style: TextStyle(fontFamily: 'BebasNeue', fontSize: 32, letterSpacing: 2)),
-              const SizedBox(height: 16),
-              TextField(
-                controller: nameCtrl,
-                decoration: InputDecoration(
-                  hintText: 'Account name (e.g. SBI Savings)',
-                  hintStyle: TextStyle(fontFamily: 'SpaceMono', fontSize: 11, color: AppColors.mutedText),
-                  border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
-                  enabledBorder: const OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: AppColors.black, width: 2)),
-                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: AppColors.blue, width: 2)),
-                ),
-                style: TextStyle(fontFamily: 'SpaceMono', fontSize: 13),
-              ),
-              const SizedBox(height: 14),
-              Wrap(
-                spacing: 8, runSpacing: 8,
-                children: AccountType.values.map((t) {
-                  final isSel = selectedType == t;
-                  final labels = {AccountType.cash: 'CASH', AccountType.bank: 'BANK', AccountType.creditCard: 'CREDIT CARD', AccountType.upi: 'UPI'};
-                  return GestureDetector(
-                    onTap: () => setState(() => selectedType = t),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isSel ? AppColors.black : Colors.white,
-                        border: Border.all(color: AppColors.black, width: 2),
-                      ),
-                      child: Text(labels[t]!, style: TextStyle(fontFamily: 'BebasNeue', fontSize: 14, letterSpacing: 1, color: isSel ? AppColors.yellow : AppColors.black)),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('ADD ACCOUNT', style: TextStyle(fontFamily: 'BebasNeue', fontSize: 28, letterSpacing: 2)),
+            const SizedBox(height: 14),
+
+            _field(_nameCtrl, 'Account name (e.g. SBI Savings)'),
+            const SizedBox(height: 10),
+
+            // Type
+            const Text('TYPE', style: TextStyle(fontFamily: 'BebasNeue', fontSize: 12, letterSpacing: 2, color: AppColors.mutedText)),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6, runSpacing: 6,
+              children: AccountType.values.map((t) {
+                final sel = _type == t;
+                return GestureDetector(
+                  onTap: () => setState(() => _type = t),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: sel ? AppColors.black : Colors.white,
+                      border: Border.all(color: AppColors.black, width: 2),
                     ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: BrutalButton(
-                  label: 'CREATE ACCOUNT',
-                  onTap: () {
-                    if (nameCtrl.text.isEmpty) return;
-                    final user = ref.read(currentUserProvider)!;
-                    final acct = Account(userId: user.id, name: nameCtrl.text, type: selectedType);
-                    ref.read(accountBoxProvider).add(acct);
-                    Navigator.pop(ctx);
-                  },
+                    child: Text(typeLabels[t]!,
+                        style: TextStyle(fontFamily: 'BebasNeue', fontSize: 14, letterSpacing: 1,
+                            color: sel ? AppColors.yellow : AppColors.black)),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 10),
+
+            if (_type != AccountType.creditCard) ...[
+              _field(_balCtrl, 'Opening balance', numeric: true),
+              const SizedBox(height: 10),
+            ],
+            if (_type == AccountType.creditCard) ...[
+              _field(_limitCtrl, 'Credit limit', numeric: true),
+              const SizedBox(height: 10),
+            ],
+
+            Row(children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(border: Border.all(color: AppColors.black, width: 2)),
+                    alignment: Alignment.center,
+                    child: const Text('CANCEL', style: TextStyle(fontFamily: 'BebasNeue', fontSize: 16, letterSpacing: 2)),
+                  ),
                 ),
               ),
-              const SizedBox(height: 20),
-            ],
-          ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: GestureDetector(
+                  onTap: _save,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: const BoxDecoration(
+                      color: AppColors.green,
+                      border: Border.fromBorderSide(BorderSide(color: AppColors.black, width: 2)),
+                      boxShadow: [BoxShadow(color: AppColors.black, offset: Offset(3, 3), blurRadius: 0)],
+                    ),
+                    alignment: Alignment.center,
+                    child: const Text('CREATE ★', style: TextStyle(fontFamily: 'BebasNeue', fontSize: 16, letterSpacing: 2, color: AppColors.black)),
+                  ),
+                ),
+              ),
+            ]),
+          ],
         ),
       ),
     );
   }
+
+  Widget _field(TextEditingController ctrl, String hint, {bool numeric = false}) => TextField(
+    controller: ctrl,
+    keyboardType: numeric ? TextInputType.number : TextInputType.text,
+    style: const TextStyle(fontFamily: 'SpaceMono', fontSize: 13),
+    decoration: InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(fontFamily: 'SpaceMono', fontSize: 10, color: AppColors.mutedText),
+      enabledBorder: const OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: AppColors.black, width: 2)),
+      focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: AppColors.blue, width: 2)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    ),
+  );
 }
 
 class _AccountCard extends StatelessWidget {
@@ -135,85 +203,77 @@ class _AccountCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final configs = {
-      AccountType.bank: (AppColors.blue, Colors.white, 'BANK'),
-      AccountType.cash: (AppColors.yellow, AppColors.black, 'CASH'),
-      AccountType.creditCard: (AppColors.black, AppColors.yellow, 'CREDIT'),
-      AccountType.upi: (AppColors.pink, Colors.white, 'UPI'),
+      AccountType.bank: (AppColors.blue, Colors.white),
+      AccountType.cash: (AppColors.yellow, AppColors.black),
+      AccountType.creditCard: (AppColors.black, AppColors.yellow),
+      AccountType.upi: (AppColors.pink, Colors.white),
     };
-    final (bg, fg, typeLabel) = configs[account.type]!;
+    final typeLabels = {AccountType.bank: 'BANK', AccountType.cash: 'CASH', AccountType.creditCard: 'CREDIT', AccountType.upi: 'UPI'};
+    final (bg, fg) = configs[account.type]!;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: bg,
         border: Border.all(color: AppColors.black, width: 3),
         boxShadow: const [BoxShadow(color: AppColors.black, offset: Offset(5, 5), blurRadius: 0)],
       ),
-      child: Stack(
-        children: [
-          // Watermark
-          Positioned(
-            right: -10, bottom: -14,
-            child: Text(
-              account.name.length > 4 ? account.name.substring(0, 4).toUpperCase() : account.name.toUpperCase(),
-              style: TextStyle(fontFamily: 'BebasNeue', fontSize: 96, color: fg.withOpacity(0.06), height: 1, letterSpacing: -4),
-            ),
+      child: Stack(children: [
+        // watermark
+        Positioned(
+          right: -8, bottom: -12,
+          child: Text(
+            account.name.substring(0, account.name.length.clamp(0, 5)).toUpperCase(),
+            style: TextStyle(fontFamily: 'BebasNeue', fontSize: 80, color: (fg as Color).withOpacity(0.06), height: 1),
           ),
-          // Type label
-          Positioned(
-            right: 0, top: 0,
-            child: Text(typeLabel, style: TextStyle(fontFamily: 'BebasNeue', fontSize: 10, letterSpacing: 2, color: fg.withOpacity(0.4))),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(account.name.toUpperCase(), style: TextStyle(fontFamily: 'BebasNeue', fontSize: 10, letterSpacing: 2, color: fg.withOpacity(0.7))),
-              const SizedBox(height: 4),
-              Text(account.name.toUpperCase(), style: TextStyle(fontFamily: 'BebasNeue', fontSize: 30, letterSpacing: 1, color: fg, height: 1)),
-              const SizedBox(height: 8),
-              // Main balance / due
-              if (account.isCreditCard) ...[
-                Text(formatINR(account.outstandingDue), style: TextStyle(fontFamily: 'BebasNeue', fontSize: 44, color: AppColors.red, height: 1, letterSpacing: -1)),
-                Text('OUTSTANDING DUE', style: TextStyle(fontFamily: 'SpaceMono', fontSize: 9, color: fg.withOpacity(0.6), letterSpacing: 1)),
-                const SizedBox(height: 12),
-                Divider(color: fg.withOpacity(0.15), thickness: 1),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _CardStat('LIMIT', formatINR(account.creditLimit ?? 0), fg),
-                    const SizedBox(width: 24),
-                    _CardStat('AVAILABLE', formatINR(account.availableCredit), AppColors.green),
-                    const SizedBox(width: 24),
-                    if (account.dueDate != null)
-                      _CardStat('DUE', DateFormat('d MMM').format(account.dueDate!), AppColors.red),
-                  ],
-                ),
-              ] else ...[
-                Text(formatINR(account.balance), style: TextStyle(fontFamily: 'BebasNeue', fontSize: 44, color: fg, height: 1, letterSpacing: -1)),
-                Text('BALANCE', style: TextStyle(fontFamily: 'SpaceMono', fontSize: 9, color: fg.withOpacity(0.6), letterSpacing: 1)),
-              ],
+        ),
+        Positioned(right: 0, top: 0,
+          child: Text(typeLabels[account.type]!,
+              style: TextStyle(fontFamily: 'BebasNeue', fontSize: 10, letterSpacing: 2, color: (fg).withOpacity(0.4)))),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(account.name.toUpperCase(),
+                style: TextStyle(fontFamily: 'BebasNeue', fontSize: 26, letterSpacing: 1, color: fg, height: 1)),
+            const SizedBox(height: 8),
+            if (account.isCreditCard) ...[
+              Text(formatINR(account.outstandingDue),
+                  style: const TextStyle(fontFamily: 'BebasNeue', fontSize: 40, color: AppColors.red, height: 1, letterSpacing: -1)),
+              Text('OUTSTANDING DUE', style: TextStyle(fontFamily: 'SpaceMono', fontSize: 9, color: (fg).withOpacity(0.6), letterSpacing: 1)),
+              const SizedBox(height: 10),
+              Divider(color: (fg).withOpacity(0.2), thickness: 1),
+              const SizedBox(height: 6),
+              Row(children: [
+                _Stat('LIMIT', formatINR(account.creditLimit ?? 0), fg),
+                const SizedBox(width: 20),
+                _Stat('AVAILABLE', formatINR(account.availableCredit), AppColors.green),
+                if (account.dueDate != null) ...[
+                  const SizedBox(width: 20),
+                  _Stat('DUE', DateFormat('d MMM').format(account.dueDate!), AppColors.red),
+                ],
+              ]),
+            ] else ...[
+              Text(formatINR(account.balance),
+                  style: TextStyle(fontFamily: 'BebasNeue', fontSize: 40, color: fg, height: 1, letterSpacing: -1)),
+              Text('BALANCE', style: TextStyle(fontFamily: 'SpaceMono', fontSize: 9, color: (fg).withOpacity(0.6), letterSpacing: 1)),
             ],
-          ),
-        ],
-      ),
+          ],
+        ),
+      ]),
     );
   }
 }
 
-class _CardStat extends StatelessWidget {
-  final String label;
-  final String value;
+class _Stat extends StatelessWidget {
+  final String label, value;
   final Color color;
-  const _CardStat(this.label, this.value, this.color);
-
+  const _Stat(this.label, this.value, this.color);
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: TextStyle(fontFamily: 'SpaceMono', fontSize: 9, letterSpacing: 1, color: color.withOpacity(0.6))),
-        Text(value, style: TextStyle(fontFamily: 'BebasNeue', fontSize: 17, color: color, height: 1)),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label, style: TextStyle(fontFamily: 'SpaceMono', fontSize: 8, letterSpacing: 1, color: color.withOpacity(0.6))),
+      Text(value, style: TextStyle(fontFamily: 'BebasNeue', fontSize: 16, color: color, height: 1)),
+    ],
+  );
 }
