@@ -37,24 +37,23 @@ jobs:
           cache: true
 
       # ── 4. Download Google Fonts (Bebas Neue + Space Mono) ────────────────
-      - name: Download fonts
-        run: |
-          mkdir -p assets/fonts
+      - name: Verify fonts exist
+        run: ls -lh assets/fonts/
 
           # Bebas Neue
-          curl -L "https://github.com/dharmatype/Bebas-Neue/raw/master/fonts/BebasNeue(2018)ByDharmaType.zip" -o bebas.zip
-          unzip -o bebas.zip -d bebas_tmp
-          find bebas_tmp -name "*.ttf" | head -1 | xargs -I{} cp {} assets/fonts/BebasNeue-Regular.ttf
-          rm -rf bebas.zip bebas_tmp
+          # curl -L "https://github.com/dharmatype/Bebas-Neue/raw/master/fonts/BebasNeue(2018)ByDharmaType.zip" -o bebas.zip
+          # unzip -o bebas.zip -d bebas_tmp
+          # find bebas_tmp -name "*.ttf" | head -1 | xargs -I{} cp {} assets/fonts/BebasNeue-Regular.ttf
+          # rm -rf bebas.zip bebas_tmp
 
-          # Space Mono (from Google Fonts GitHub mirror)
-          curl -L "https://github.com/googlefonts/spacemono/raw/main/fonts/SpaceMono-Regular.ttf" -o assets/fonts/SpaceMono-Regular.ttf
-          curl -L "https://github.com/googlefonts/spacemono/raw/main/fonts/SpaceMono-Bold.ttf" -o assets/fonts/SpaceMono-Bold.ttf
-          curl -L "https://github.com/googlefonts/spacemono/raw/main/fonts/SpaceMono-Italic.ttf" -o assets/fonts/SpaceMono-Italic.ttf
-          curl -L "https://github.com/googlefonts/spacemono/raw/main/fonts/SpaceMono-BoldItalic.ttf" -o assets/fonts/SpaceMono-BoldItalic.ttf
+          # # Space Mono (from Google Fonts GitHub mirror)
+          # curl -L "https://github.com/googlefonts/spacemono/raw/main/fonts/SpaceMono-Regular.ttf" -o assets/fonts/SpaceMono-Regular.ttf
+          # curl -L "https://github.com/googlefonts/spacemono/raw/main/fonts/SpaceMono-Bold.ttf" -o assets/fonts/SpaceMono-Bold.ttf
+          # curl -L "https://github.com/googlefonts/spacemono/raw/main/fonts/SpaceMono-Italic.ttf" -o assets/fonts/SpaceMono-Italic.ttf
+          # curl -L "https://github.com/googlefonts/spacemono/raw/main/fonts/SpaceMono-BoldItalic.ttf" -o assets/fonts/SpaceMono-BoldItalic.ttf
 
-          echo "Fonts downloaded:"
-          ls -lh assets/fonts/
+          # echo "Fonts downloaded:"
+          # ls -lh assets/fonts/
 
       # ── 5. Install Flutter dependencies ───────────────────────────────────
       - name: Flutter pub get
