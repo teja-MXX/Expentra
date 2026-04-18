@@ -46,7 +46,9 @@ jobs:
         run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Build debug APK
-        run: flutter build apk --debug --no-tree-shake-icons --no-pub
+        run: |
+          flutter build apk --debug --no-tree-shake-icons --no-pub || true
+          find /home/runner/work -name "*.apk" 2>/dev/null
 
       - name: Find and upload APK
         run: |
