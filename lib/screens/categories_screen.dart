@@ -84,7 +84,7 @@ class _CategoryDialog extends ConsumerStatefulWidget {
   final String? parentId;
   const _CategoryDialog({this.existing, this.parentId});
   @override
-  State<_CategoryDialog> createState() => _CategoryDialogState();
+  ConsumerState<_CategoryDialog> createState() => _CategoryDialogState();
 }
 
 class _CategoryDialogState extends ConsumerState<_CategoryDialog> {
