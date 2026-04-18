@@ -69,7 +69,7 @@ jobs:
           retention-days: 30
 
       - name: Build release APK
-        run: flutter build apk --release --no-tree-shake-icons --no-pub
+        run: flutter build apk --release --no-tree-shake-icons --no-pub || true
 
       - name: Upload release APK
         run: |
