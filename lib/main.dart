@@ -60,64 +60,6 @@ void main() async {
 }
 
 Future<void> _seedDemoData() async {
-  final acctBox = Hive.box<Account>('accounts');
-  final catBox = Hive.box<Category>('categories');
-  final txnBox = Hive.box<Transaction>('transactions');
-  final budgetBox = Hive.box<Budget>('budgets');
-  const userId = 'demo_user';
-
-  if (catBox.isEmpty) {
-    for (final cat in defaultCategories(userId)) { await catBox.add(cat); }
-  }
-
-  if (acctBox.isEmpty) {
-    await acctBox.add(Account(userId: userId, name: 'SBI Savings', type: AccountType.bank, balance: 124300));
-    await acctBox.add(Account(
-      userId: userId, name: 'Axis Platinum CC', type: AccountType.creditCard,
-      creditLimit: 150000, outstandingDue: 8200,
-      dueDate: DateTime.now().add(const Duration(days: 11)),
-    ));
-    await acctBox.add(Account(userId: userId, name: 'PhonePe UPI', type: AccountType.upi, balance: 4280));
-    await acctBox.add(Account(userId: userId, name: 'Cash', type: AccountType.cash, balance: 2400));
-  }
-
-  if (txnBox.isEmpty && catBox.isNotEmpty && acctBox.isNotEmpty) {
-    final cats = catBox.values.toList();
-    final accounts = acctBox.values.toList();
-    final sbi = accounts.firstWhere((a) => a.name.contains('SBI'));
-    final cc = accounts.firstWhere((a) => a.type == AccountType.creditCard);
-    final upi = accounts.firstWhere((a) => a.type == AccountType.upi);
-    Category catByName(String n) => cats.firstWhere((c) => c.name == n, orElse: () => cats.first);
-
-    final now = DateTime.now();
-    final demo = [
-      Transaction(userId: userId, amount: 85000, type: TransactionType.income, categoryId: catByName('Salary').id, accountId: sbi.id, note: 'April Salary', date: DateTime(now.year, now.month, 1)),
-      Transaction(userId: userId, amount: 640, type: TransactionType.expense, categoryId: catByName('Food').id, accountId: cc.id, note: 'Zomato', date: now.subtract(const Duration(hours: 2))),
-      Transaction(userId: userId, amount: 280, type: TransactionType.expense, categoryId: catByName('Transport').id, accountId: cc.id, note: 'Uber', date: now.subtract(const Duration(days: 1))),
-      Transaction(userId: userId, amount: 1840, type: TransactionType.expense, categoryId: catByName('Groceries').id, accountId: upi.id, note: 'Big Basket', date: now.subtract(const Duration(days: 2))),
-      Transaction(userId: userId, amount: 649, type: TransactionType.expense, categoryId: catByName('Subscriptions').id, accountId: cc.id, note: 'Netflix', date: now.subtract(const Duration(days: 3))),
-      Transaction(userId: userId, amount: 3200, type: TransactionType.expense, categoryId: catByName('Food').id, accountId: cc.id, note: 'Swiggy weekend', date: now.subtract(const Duration(days: 4))),
-      Transaction(userId: userId, amount: 1200, type: TransactionType.expense, categoryId: catByName('Transport').id, accountId: upi.id, note: 'Ola monthly', date: now.subtract(const Duration(days: 5))),
-      Transaction(userId: userId, amount: 2000, type: TransactionType.expense, categoryId: catByName('Groceries').id, accountId: upi.id, note: 'DMart', date: now.subtract(const Duration(days: 6))),
-      Transaction(userId: userId, amount: 500, type: TransactionType.expense, categoryId: catByName('Health').id, accountId: upi.id, note: 'PharmEasy', date: now.subtract(const Duration(days: 7))),
-      Transaction(userId: userId, amount: 800, type: TransactionType.expense, categoryId: catByName('Entertainment').id, accountId: upi.id, note: 'Inox movie', date: now.subtract(const Duration(days: 8))),
-      Transaction(userId: userId, amount: 5000, type: TransactionType.transfer, categoryId: catByName('Transfer').id, accountId: sbi.id, toAccountId: cc.id, note: 'CC bill payment', date: now.subtract(const Duration(days: 9))),
-    ];
-    for (final t in demo) { await txnBox.add(t); }
-  }
-
-  if (budgetBox.isEmpty && catBox.isNotEmpty) {
-    final cats = catBox.values.toList();
-    Category catByName(String n) => cats.firstWhere((c) => c.name == n, orElse: () => cats.first);
-    final budgets = [
-      Budget(userId: userId, categoryId: catByName('Food').id, monthlyLimit: 12000),
-      Budget(userId: userId, categoryId: catByName('Transport').id, monthlyLimit: 8000),
-      Budget(userId: userId, categoryId: catByName('Groceries').id, monthlyLimit: 10000),
-      Budget(userId: userId, categoryId: catByName('Subscriptions').id, monthlyLimit: 4000),
-      Budget(userId: userId, categoryId: catByName('Entertainment').id, monthlyLimit: 5000),
-    ];
-    for (final b in budgets) { await budgetBox.add(b); }
-  }
 }
 
 class XpnsApp extends StatelessWidget {
