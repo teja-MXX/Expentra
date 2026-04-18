@@ -1,35 +1,109 @@
 name: Build XPNS APK
 
 on:
-push:
-branches: [main, master]
-pull_request:
-branches: [main, master]
-workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
 
 jobs:
-build-apk:
-runs-on: ubuntu-latest
+  build-apk:
+    name: Build APK
+    runs-on: ubuntu-latest
 
-```
-steps:
-  - name: Checkout
-    uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  - name: Setup Java
-    uses: actions/setup-java@v4
-    with:
-      distribution: temurin
-      java-version: 17
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
-  - name: Setup Flutter
-    uses: subosito/flutter-action@v2
-    with:
-      flutter-version: 3.19.0
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+          cache: true
 
-  - name: Install deps
-    run: flutter pub get
+      - name: Verify fonts exist
+        run: ls -lh assets/fonts/
 
-  - name: Build APK
-    run: flutter build apk --debug
-```
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Flutter analyze
+        run: flutter analyze --no-fatal-infos || true
+
+      - name: Accept Android licenses
+        run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      - name: Build debug APK
+        run: flutter build apk --debug --no-tree-shake-icons --no-pub
+
+      - name: Find and upload APK
+        run: |
+          TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          mkdir -p output
+          echo "Searching for APK..."
+          find . -name "*.apk" -not -path "*/flutter_tools/*" 2>/dev/null
+          APK=$(find . -name "app-debug.apk" -not -path "*/flutter_tools/*" | head -1)
+          echo "Found: $APK"
+          cp "$APK" output/xpns-debug-${TIMESTAMP}-${SHORT_SHA}.apk
+          ls -lh output/
+          echo "APK_SHORT_SHA=${SHORT_SHA}" >> $GITHUB_ENV
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: xpns-debug-apk-${{ env.APK_SHORT_SHA }}
+          path: output/xpns-debug-*.apk
+          retention-days: 30
+
+      - name: Build release APK
+        run: flutter build apk --release --no-tree-shake-icons --no-pub
+
+      - name: Upload release APK
+        run: |
+          TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          mkdir -p output_release
+          APK=$(find . -name "app-release.apk" -not -path "*/flutter_tools/*" | head -1)
+          cp "$APK" output_release/xpns-release-${TIMESTAMP}-${SHORT_SHA}.apk
+          ls -lh output_release/
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: xpns-release-apk-${{ env.APK_SHORT_SHA }}
+          path: output_release/xpns-release-*.apk
+          retention-days: 90
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            output/xpns-debug-*.apk
+            output_release/xpns-release-*.apk
+          name: "XPNS ${{ github.ref_name }}"
+          body: |
+            ## ★ XPNS TRACKER ${{ github.ref_name }} ★
+            Download the APK, enable Unknown Sources on your phone, install.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "## ★ BUILD COMPLETE ★" >> $GITHUB_STEP_SUMMARY
+          echo "Go to **Actions** → this run → **Artifacts** to download your APK" >> $GITHUB_STEP_SUMMARY
