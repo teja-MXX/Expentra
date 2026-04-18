@@ -46,9 +46,7 @@ jobs:
         run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Build debug APK
-        run: |
-          run: flutter build apk --debug --no-tree-shake-icons --no-pub --verbose 2>&1 | grep -E "error:|Error:|FAILED|exception" | head -30
-          find . -name "*.apk" 2>/dev/null | grep -v flutter_tools
+        run: flutter build apk --debug --no-tree-shake-icons --no-pub 2>&1 | grep -v "^\[" | head -50
 
       - name: Find and upload APK
         run: |
