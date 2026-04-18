@@ -74,21 +74,20 @@ class CategoriesScreen extends ConsumerWidget {
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (_) => _CategoryDialog(existing: existing, parentId: parentId, ref: ref),
+      builder: (_) => _CategoryDialog(existing: existing, parentId: parentId),
     );
   }
 }
 
-class _CategoryDialog extends StatefulWidget {
+class _CategoryDialog extends ConsumerStatefulWidget {
   final Category? existing;
   final String? parentId;
-  final WidgetRef ref;
-  const _CategoryDialog({this.existing, this.parentId, required this.ref});
+  const _CategoryDialog({this.existing, this.parentId});
   @override
   State<_CategoryDialog> createState() => _CategoryDialogState();
 }
 
-class _CategoryDialogState extends State<_CategoryDialog> {
+class _CategoryDialogState extends ConsumerState<_CategoryDialog> {
   late final TextEditingController _nameCtrl;
   late String _icon;
   late int _color;
@@ -106,14 +105,14 @@ class _CategoryDialogState extends State<_CategoryDialog> {
 
   void _save() {
     if (_nameCtrl.text.trim().isEmpty) return;
-    final user = widget.ref.read(currentUserProvider)!;
+    final user = ref.read(currentUserProvider)!;
     if (widget.existing != null) {
       widget.existing!.name = _nameCtrl.text.trim();
       widget.existing!.icon = _icon;
       widget.existing!.colorValue = _color;
       widget.existing!.save();
     } else {
-      widget.ref.read(categoryBoxProvider).add(Category(
+      ref.read(categoryBoxProvider).add(Category(
         userId: user.id,
         name: _nameCtrl.text.trim(),
         icon: _icon,
