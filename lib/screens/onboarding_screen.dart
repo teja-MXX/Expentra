@@ -43,6 +43,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.black,
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
